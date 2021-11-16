@@ -190,6 +190,8 @@ namespace S3_Uploader.Editor
 
                 if (backup)
                 {
+                    Debug.Log("Deleting previous back up directory");
+                    await DeleteAllObjectsIn($"{s3Directory}-backup");
                     await BackupFiles(s3Directory);
                 }
 
@@ -279,12 +281,13 @@ namespace S3_Uploader.Editor
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
-            //Todo: 1. create lock file for client to read when loading content catalog
-
+            //create client lock
+            var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
+            await UploadFile($"cycligent-downloads/{destination}", lockFile);
             //copy files from temp-directory to correct directory
             await CopyTempFiles(uploadPath);
-            //Todo: 1. delete lock file for client to read when loading content catalog
-
+            //delete client lock
+            await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
             //delete temp-directory on s3
             if (autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
@@ -313,18 +316,18 @@ namespace S3_Uploader.Editor
 
             //create required file
             var file = CreateRequiredFile(localFilePath);
-            //todo: 1. check required.txt file if no files on s3. It double adds to files to upload. Need to think of workaround.
             Debug.Log($"Adding {file.Name} to files to upload");
             filesToUpload.Add(file);
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
-            //Todo: 1. create lock file for updating in progress
-
+            //create client lock
+            var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
+            await UploadFile($"cycligent-downloads/{destination}", lockFile);
             //copy temp directory to main directory
             await CopyTempFiles(uploadPath);
-            //Todo: 1. delete updating in progress lock file
-
+            //delete client lock
+            await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
             //delete files in s3 main directory that are not in your local folder
             await DeleteOldFiles(s3Files, localFiles);
             //delete files from temp-directory
@@ -378,7 +381,7 @@ namespace S3_Uploader.Editor
             {
                 var s3FileName = s3Object.Key.Split('/').Last();
                 var delete = true;
-                foreach (var localFile in localFiles.Where(localFile => s3FileName == localFile.Name))
+                foreach (var _ in localFiles.Where(localFile => s3FileName == localFile.Name))
                 {
                     delete = false;
                     break;
@@ -597,7 +600,7 @@ namespace S3_Uploader.Editor
                 Directory.CreateDirectory(localFilePath);
             
             File.WriteAllText(fileName, string.Empty);
-            Debug.Log($"Lock file created: {File.Exists(fileName)}");
+            Debug.Log($"Lock file created: '{name}'. Exist: '{File.Exists(fileName)}'");
             return new FileInfo(fileName);
         }
 
