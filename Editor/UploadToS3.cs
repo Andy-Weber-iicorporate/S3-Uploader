@@ -196,7 +196,7 @@ namespace S3_Uploader.Editor
                 //Delete lock file so another upload can take place
                 if(lockFilePresent == false)
                     await DeleteFile($"{tempS3Directory}/{fidelity}-{version}.lock");
-//
+
                 _running = false;
                 Debug.Log("Uploading complete!");
                 progressWindow.Complete();
