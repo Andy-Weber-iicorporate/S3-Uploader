@@ -58,7 +58,7 @@ namespace S3_Uploader.Editor
             string[] s = Application.dataPath.Split('/');
             window.projectName = s[s.Length - 2];
             window.region = EditorPrefs.GetString($"{window.projectName}_UploadToS3_region", "us-west-2");
-            window.bucketName = EditorPrefs.GetString($"{window.projectName}_UploadToS3_bucketName", "Caders");
+            window.bucketName = EditorPrefs.GetString($"{window.projectName}_UploadToS3_bucketName", "Maps");
             window.fidelity = (Fidelity)EditorPrefs.GetInt($"{window.projectName}_UploadToS3_Quality", 1);
             window.version = (Version)EditorPrefs.GetInt($"{window.projectName}_UploadToS3_Version", 1);
             window.iamAccessKeyId = EditorPrefs.GetString($"{window.projectName}_UploadToS3_iamAccessKeyId", "** SET ACCESS KEY ID **");
@@ -73,7 +73,7 @@ namespace S3_Uploader.Editor
             string[] s = Application.dataPath.Split('/');
             projectName = s[s.Length - 2];
             region = EditorPrefs.GetString($"{projectName}_UploadToS3_region", "us-west-2");
-            bucketName = EditorPrefs.GetString($"{projectName}_UploadToS3_bucketName", "Caders");
+            bucketName = EditorPrefs.GetString($"{projectName}_UploadToS3_bucketName", "Maps");
             fidelity = (Fidelity)EditorPrefs.GetInt($"{projectName}_UploadToS3_Quality", 1);
             version = (Version)EditorPrefs.GetInt($"{projectName}_UploadToS3_Version", 1);
             iamAccessKeyId = EditorPrefs.GetString($"{projectName}_UploadToS3_iamAccessKeyId", "** SET ACCESS KEY ID **");
