@@ -125,16 +125,16 @@ namespace S3_Uploader.Editor
                 }
             }
             
-            if (GUILayout.Button("uploader"))
-            {
-                var list = new List<FileInfo>();
-                for (int i = 0; i < 100; i++)
-                {
-                    list.Add(new FileInfo(GUID.Generate().ToString()));
-                }
-                var window = ProgressDisplay.ShowWindow(list);
-                window.UpdateProgress("test 12", 0.5f, 0);
-            }
+            // if (GUILayout.Button("uploader"))
+            // {
+            //     var list = new List<FileInfo>();
+            //     for (int i = 0; i < 100; i++)
+            //     {
+            //         list.Add(new FileInfo(GUID.Generate().ToString()));
+            //     }
+            //     var window = ProgressDisplay.ShowWindow(list);
+            //     window.UpdateProgress("test 12", 0.5f, 0);
+            // }
         }
 
 
