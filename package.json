@@ -1,0 +1,20 @@
+{
+  "name": "com.andy.s3-uploader",
+  "version": "1.0.0",
+  "displayName": "S3 Uploader",
+  "description": "This package is for uploading content to s3",
+  "unity": "2020.3",
+  "unityRelease": "15f12",
+  "dependencies": {
+  },
+  "keywords": [
+    "s3",
+    "uploader",
+    "tools"
+  ],
+  "author": {
+    "name": "Andy",
+    "email": "sniffle6@gmail.com",
+    "url": ""
+  }
+}

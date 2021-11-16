@@ -1,0 +1,17 @@
+{
+    "name": "AWS",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
