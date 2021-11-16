@@ -29,6 +29,13 @@ namespace S3_Uploader.Editor
         High
     }
 
+    public struct BackUpProgress
+    {
+        public bool Running;
+        public int Count;
+        public int Completed;
+    }
+
     public class UploadToS3 : EditorWindow
     {
         private string region;
@@ -42,8 +49,9 @@ namespace S3_Uploader.Editor
         private Version version;
         private bool autoDeleteTemp = true;
         string projectName;
-        
-        
+        private bool backup;
+        BackUpProgress backupProgress;
+
         private bool _uploading;
         ProgressDisplay progressWindow;
 
@@ -53,7 +61,7 @@ namespace S3_Uploader.Editor
 
         [MenuItem("Cade/Addressable Content Uploader (S3)")]
         static void Init()
-        { 
+        {
             var window = (UploadToS3)GetWindow(typeof(UploadToS3), false, "S3 Uploader");
             string[] s = Application.dataPath.Split('/');
             window.projectName = s[s.Length - 2];
@@ -64,6 +72,7 @@ namespace S3_Uploader.Editor
             window.iamAccessKeyId = EditorPrefs.GetString($"{window.projectName}_UploadToS3_iamAccessKeyId", "** SET ACCESS KEY ID **");
             window.iamSecretKey = EditorPrefs.GetString($"{window.projectName}_UploadToS3_iamSecretKey", "** SET SECRET KEY **");
             window.autoDeleteTemp = EditorPrefs.GetBool($"{window.projectName}_UploadToS3_deleteTemp", true);
+            window.backup = EditorPrefs.GetBool($"{window.projectName}_UploadToS3_backup", true);
             window.Show();
         }
 
@@ -79,6 +88,7 @@ namespace S3_Uploader.Editor
             iamAccessKeyId = EditorPrefs.GetString($"{projectName}_UploadToS3_iamAccessKeyId", "** SET ACCESS KEY ID **");
             iamSecretKey = EditorPrefs.GetString($"{projectName}_UploadToS3_iamSecretKey", "** SET SECRET KEY **");
             autoDeleteTemp = EditorPrefs.GetBool($"{projectName}_UploadToS3_deleteTemp", true);
+            backup = EditorPrefs.GetBool($"{projectName}_UploadToS3_backup", true);
         }
 
 
@@ -87,13 +97,15 @@ namespace S3_Uploader.Editor
             EditorGUI.BeginChangeCheck();
             GUILayout.Label("Advanced Settings", EditorStyles.boldLabel);
             foldout = EditorGUILayout.Foldout(foldout, "Advanced");
-            if(foldout)
+            if (foldout)
             {
                 region = EditorGUILayout.TextField("Region", region);
                 iamAccessKeyId = EditorGUILayout.TextField("IAM Access Key Id", iamAccessKeyId);
                 iamSecretKey = EditorGUILayout.TextField("IAM Secret Key", iamSecretKey);
                 autoDeleteTemp = EditorGUILayout.Toggle("Delete Temp Folder", autoDeleteTemp);
+                backup = EditorGUILayout.Toggle("Backup before updating", backup);
             }
+
             GUILayout.Label("Basic Settings", EditorStyles.boldLabel);
             bucketName = EditorGUILayout.TextField("Bucket name", bucketName);
             version = (Version)EditorGUILayout.EnumPopup("Version", version);
@@ -109,14 +121,16 @@ namespace S3_Uploader.Editor
                 EditorPrefs.SetString($"{projectName}_UploadToS3_iamAccessKeyId", iamAccessKeyId);
                 EditorPrefs.SetString($"{projectName}_UploadToS3_iamSecretKey", iamSecretKey);
                 EditorPrefs.SetBool($"{projectName}_UploadToS3_deleteTemp", autoDeleteTemp);
+                EditorPrefs.SetBool($"{projectName}_UploadToS3_backup", backup);
             }
-            
+
             if (_running == false && GUILayout.Button("Upload Content"))
             {
                 var requiredText = required ? "required" : "non required";
                 var proceed = EditorUtility.DisplayDialog($"Upload {fidelity} to {version}?",
-                        $"Are you sure want to upload {fidelity} to {version} as {requiredText}?", "Yes", "No");
-                if(proceed){
+                    $"Are you sure want to upload {fidelity} to {version} as {requiredText}?", "Yes", "No");
+                if (proceed)
+                {
                     bucketRegion = RegionEndpoint.GetBySystemName(region);
                     var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
                     var localFilePath =
@@ -124,7 +138,16 @@ namespace S3_Uploader.Editor
                     InitiateTask(localFilePath);
                 }
             }
-            
+
+            if (backupProgress.Running)
+            {
+                EditorUtility.DisplayProgressBar("Backing up content", $"Backing up content: {backupProgress.Completed}/{backupProgress.Count} copied", (float)backupProgress.Completed/backupProgress.Count);
+            }
+            else
+            {
+                EditorUtility.ClearProgressBar();
+            }
+
             // if (GUILayout.Button("uploader"))
             // {
             //     var list = new List<FileInfo>();
@@ -146,7 +169,7 @@ namespace S3_Uploader.Editor
             var tempS3Directory = $"{s3Directory}-temp";
             var lockFilePresent = false;
             Debug.Log($"Starting a content upload from {localFilePath} to {s3Directory}");
-            
+
             try
             {
                 //Create s3Client and credentials
@@ -164,6 +187,11 @@ namespace S3_Uploader.Editor
                 //create lock file for preventing multiple uploads
                 var file = CreateLockFile($"{fidelity}-{version}.lock", localFilePath);
                 await UploadFile($"cycligent-downloads/{tempS3Directory}", file);
+
+                if (backup)
+                {
+                    await BackupFiles(s3Directory);
+                }
 
                 if (required)
                 {
@@ -185,7 +213,6 @@ namespace S3_Uploader.Editor
             catch (AmazonS3Exception e)
             {
                 Debug.LogError($"Error encountered on server. Message:'{e.Message}' when writing an object");
-                
             }
             catch (Exception e)
             {
@@ -194,7 +221,7 @@ namespace S3_Uploader.Editor
             finally
             {
                 //Delete lock file so another upload can take place
-                if(lockFilePresent == false)
+                if (lockFilePresent == false)
                     await DeleteFile($"{tempS3Directory}/{fidelity}-{version}.lock");
 
                 _running = false;
@@ -235,12 +262,12 @@ namespace S3_Uploader.Editor
             Debug.Log($"Starting a non required upload to {uploadPath} from {localFilePath}");
             //delete files from temp-directory
             await DeleteAllObjectsIn(uploadPath);
-            
+
             //get hosted and local files
             var destination = uploadPath.Replace($"-temp", $"");
             var s3Files = await GetObjectsInBucket("cycligent-downloads", destination);
             var localFiles = GetFiles(localFilePath);
-            
+
             //Get files to upload to s3 (content files + files not found on s3)
             var filesToUpload = GetFilesToUpload(localFiles, s3Files);
             if (filesToUpload.Count <= 2)
@@ -248,17 +275,18 @@ namespace S3_Uploader.Editor
                 Debug.Log("No files to upload!");
                 return false;
             }
+
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
             //Todo: 1. create lock file for client to read when loading content catalog
-            
+
             //copy files from temp-directory to correct directory
-            await CopyFiles(uploadPath);
+            await CopyTempFiles(uploadPath);
             //Todo: 1. delete lock file for client to read when loading content catalog
-            
+
             //delete temp-directory on s3
-            if(autoDeleteTemp)
+            if (autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
             return true;
         }
@@ -269,12 +297,12 @@ namespace S3_Uploader.Editor
             Debug.Log($"Starting a required upload to {uploadPath} from {localFilePath}");
             //delete files from temp-directory
             await DeleteAllObjectsIn(uploadPath);
-            
+
             //get hosted and local files
             var destination = uploadPath.Replace($"-temp", $"");
             var s3Files = await GetObjectsInBucket("cycligent-downloads", destination);
             var localFiles = GetFiles(localFilePath);
-            
+
             //Get files to upload to s3 (content files + files not found on s3)
             var filesToUpload = GetFilesToUpload(localFiles, s3Files);
             if (filesToUpload.Count <= 2)
@@ -294,13 +322,13 @@ namespace S3_Uploader.Editor
             //Todo: 1. create lock file for updating in progress
 
             //copy temp directory to main directory
-            await CopyFiles(uploadPath);
+            await CopyTempFiles(uploadPath);
             //Todo: 1. delete updating in progress lock file
-            
+
             //delete files in s3 main directory that are not in your local folder
             await DeleteOldFiles(s3Files, localFiles);
             //delete files from temp-directory
-            if(autoDeleteTemp)
+            if (autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
             return true;
         }
@@ -314,7 +342,7 @@ namespace S3_Uploader.Editor
             {
                 if (localFile.Name.Contains(".lock"))
                     continue;
-                
+
                 if (localFile.Name.Contains("required.txt"))
                     continue;
 
@@ -333,7 +361,8 @@ namespace S3_Uploader.Editor
                 //if file not on s3 add to filesToUpload
                 if (found == false)
                 {
-                    Debug.Log($"Adding '{localFile.Name}' to files to upload. Not found on S3. Full Name: '{localFile.FullName}'");
+                    Debug.Log(
+                        $"Adding '{localFile.Name}' to files to upload. Not found on S3. Full Name: '{localFile.FullName}'");
                     filesToUpload.Add(localFile);
                 }
             }
@@ -355,9 +384,9 @@ namespace S3_Uploader.Editor
                     break;
                 }
 
-                if (delete == false) 
+                if (delete == false)
                     continue;
-                
+
                 await DeleteObject(s3Object);
             }
         }
@@ -383,7 +412,7 @@ namespace S3_Uploader.Editor
                 Key = s3Object.Key
             });
         }
-        
+
 
         private async Task DeleteFile(string key)
         {
@@ -422,7 +451,8 @@ namespace S3_Uploader.Editor
             transferUtility ??= new TransferUtility(_s3Client);
             var directoryName = file.DirectoryName ?? "";
             var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
-            var appendedPath = directoryName.Split(new[] { $"{buildTarget}" }, StringSplitOptions.None).Last().Replace("\\", "/");
+            var appendedPath = directoryName.Split(new[] { $"{buildTarget}" }, StringSplitOptions.None).Last()
+                .Replace("\\", "/");
             var path = $"{uploadPath}{appendedPath}";
             Debug.Log($"Uploading {file.Name} to {path}! File fullName: {file.FullName}");
             var transferUtilityRequest = new TransferUtilityUploadRequest
@@ -432,12 +462,12 @@ namespace S3_Uploader.Editor
                 StorageClass = S3StorageClass.Standard,
                 CannedACL = S3CannedACL.PublicRead,
             };
-            if(progressWindow)
+            if (progressWindow)
                 progressWindow.UpdateStatus(file.Name, Status.Uploading);
             transferUtilityRequest.UploadProgressEvent += UploadProgress;
             await transferUtility.UploadAsync(transferUtilityRequest);
             transferUtilityRequest.UploadProgressEvent -= UploadProgress;
-            if(progressWindow)
+            if (progressWindow)
                 progressWindow.UpdateStatus(file.Name, Status.Uploaded);
             Debug.Log($"Upload completed for {file.Name}! Full Name: '{file.FullName}'");
         }
@@ -447,19 +477,19 @@ namespace S3_Uploader.Editor
         {
             var key = e.FilePath.Split('\\').Last();
             Debug.Log($"Uploading: {key} {e.PercentDone}. transferred: {e.TransferredBytes}/{e.TotalBytes}");
-            if(progressWindow)
-                progressWindow.UpdateProgress(key, e.PercentDone/100f, e.TransferredBytes);
+            if (progressWindow)
+                progressWindow.UpdateProgress(key, e.PercentDone / 100f, e.TransferredBytes);
         }
 
 
-        private async Task CopyFiles(string copyFrom)
+        private async Task CopyTempFiles(string copyFrom)
         {
             var objectsToCopy = await GetObjectsInBucket("cycligent-downloads", copyFrom);
             foreach (var obj in objectsToCopy)
             {
-                if(obj.Key.Contains(".lock"))
+                if (obj.Key.Contains(".lock"))
                     continue;
-                
+
                 var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
                 var destination = obj.Key.Replace($"{buildTarget}-temp", $"{buildTarget}");
                 Debug.Log($"Copying {obj.Key} from bucket {obj.BucketName} to {destination}");
@@ -475,6 +505,37 @@ namespace S3_Uploader.Editor
                 await _s3Client.CopyObjectAsync(request);
                 progressWindow.UpdateStatus(key, Status.Completed);
             }
+        }
+
+
+        private async Task BackupFiles(string copyFrom)
+        {
+            var objectsToCopy = await GetObjectsInBucket("cycligent-downloads", copyFrom);
+            backupProgress = new BackUpProgress
+            {
+                Count = objectsToCopy.Count,
+                Completed = 0,
+                Running = true,
+            };
+            
+            foreach (var obj in objectsToCopy.Where(obj => !obj.Key.Contains(".lock")))
+            {
+                var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
+                var destination = obj.Key.Replace($"{buildTarget}", $"{buildTarget}-backup");
+                Debug.Log($"Backing up {obj.Key} from bucket {obj.BucketName} to {destination}");
+                var request = new CopyObjectRequest
+                {
+                    SourceBucket = "cycligent-downloads",
+                    SourceKey = obj.Key,
+                    DestinationBucket = "cycligent-downloads",
+                    DestinationKey = destination
+                };
+                
+                await _s3Client.CopyObjectAsync(request);
+                backupProgress.Completed++;
+            }
+
+            backupProgress = default;
         }
 
 
@@ -532,7 +593,11 @@ namespace S3_Uploader.Editor
         {
             Debug.Log("Creating lock file to prevent multiple uploads");
             var fileName = Path.Combine(localFilePath, name);
+            if (Directory.Exists(localFilePath) == false)
+                Directory.CreateDirectory(localFilePath);
+            
             File.WriteAllText(fileName, string.Empty);
+            Debug.Log($"Lock file created: {File.Exists(fileName)}");
             return new FileInfo(fileName);
         }
 
