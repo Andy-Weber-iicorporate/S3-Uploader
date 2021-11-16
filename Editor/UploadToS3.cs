@@ -199,6 +199,7 @@ namespace S3_Uploader.Editor
 //
                 _running = false;
                 Debug.Log("Uploading complete!");
+                progressWindow.Complete();
             }
         }
 
@@ -259,8 +260,6 @@ namespace S3_Uploader.Editor
             //delete temp-directory on s3
             if(autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
-            
-            progressWindow.Complete();
             return true;
         }
 
@@ -303,8 +302,6 @@ namespace S3_Uploader.Editor
             //delete files from temp-directory
             if(autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
-
-            progressWindow.Complete();
             return true;
         }
 
