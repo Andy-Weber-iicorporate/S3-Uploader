@@ -186,7 +186,7 @@ namespace S3_Uploader.Editor
 
                 //create lock file for preventing multiple uploads
                 var file = CreateLockFile($"{fidelity}-{version}.lock", localFilePath);
-                await UploadFile($"cycligent-downloads/{tempS3Directory}", file, null, false);
+                await UploadFile($"cycligent-downloads/{tempS3Directory}", file, null);
 
                 if (backup)
                 {
@@ -283,7 +283,7 @@ namespace S3_Uploader.Editor
             await UploadFiles(filesToUpload, uploadPath);
             //create client lock
             var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
-            await UploadFile($"cycligent-downloads/{destination}", lockFile);
+            await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
             //copy files from temp-directory to correct directory
             await CopyTempFiles(uploadPath);
             //delete client lock
@@ -323,7 +323,7 @@ namespace S3_Uploader.Editor
             await UploadFiles(filesToUpload, uploadPath);
             //create client lock
             var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
-            await UploadFile($"cycligent-downloads/{destination}", lockFile);
+            await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
             //copy temp directory to main directory
             await CopyTempFiles(uploadPath);
             //delete client lock
@@ -364,8 +364,7 @@ namespace S3_Uploader.Editor
                 //if file not on s3 add to filesToUpload
                 if (found == false)
                 {
-                    Debug.Log(
-                        $"Adding '{localFile.Name}' to files to upload. Not found on S3. Full Name: '{localFile.FullName}'");
+                    Debug.Log($"Adding '{localFile.Name}' to files to upload. Not found on S3. Full Name: '{localFile.FullName}'");
                     filesToUpload.Add(localFile);
                 }
             }
@@ -419,7 +418,6 @@ namespace S3_Uploader.Editor
 
         private async Task DeleteFile(string key)
         {
-            Debug.Log($"Deleting {key}");
             await DeleteObject(new S3Object
             {
                 BucketName = "cycligent-downloads",
@@ -594,7 +592,7 @@ namespace S3_Uploader.Editor
 
         private static FileInfo CreateLockFile(string name, string localFilePath)
         {
-            Debug.Log("Creating lock file to prevent multiple uploads");
+            Debug.Log($"Creating lock file {name}");
             var fileName = Path.Combine(localFilePath, name);
             if (Directory.Exists(localFilePath) == false)
                 Directory.CreateDirectory(localFilePath);

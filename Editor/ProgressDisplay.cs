@@ -86,7 +86,7 @@ namespace S3_Uploader.Editor
             }
             else
             {
-                var errorMessage = "Content not present in '_contentUploading' dictionary while updating progress. ";
+                const string errorMessage = "Content not present in '_contentUploading' dictionary while updating progress. ";
                 Debug.Log(errorMessage + content);
                 _contentUploading.Add(content, new Content(content, 0, Status.Failed, errorMessage, 0));
             }
@@ -107,12 +107,14 @@ namespace S3_Uploader.Editor
             }
             else
             {
+                const string errorMessage = "Content not present in '_contentUploading' dictionary while updating status files.";
                 _contentUploading.Add(content, new Content
                 (content,
                     0,
                     Status.Failed,
-                    "Content not present in '_contentUploading' dictionary while copying files.",
+                    errorMessage,
                     0));
+                Debug.Log(errorMessage + content);
                 var height = (_contentUploading.Count + 1) * 36 < 1000 ? 1000 : (_contentUploading.Count + 1) * 36;
                 maxSize =  new Vector2(Screen.currentResolution.width, height);
             }
