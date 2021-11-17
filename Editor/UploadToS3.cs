@@ -57,6 +57,7 @@ namespace S3_Uploader.Editor
 
         private AmazonS3Client _s3Client;
         private bool _running;
+        private BasicAWSCredentials _credentials;
 
 
         [MenuItem("Cade/Addressable Content Uploader (S3)")]
@@ -173,8 +174,8 @@ namespace S3_Uploader.Editor
             try
             {
                 //Create s3Client and credentials
-                var credentials = new BasicAWSCredentials(iamAccessKeyId, iamSecretKey);
-                _s3Client ??= new AmazonS3Client(credentials, bucketRegion);
+                _credentials = new BasicAWSCredentials(iamAccessKeyId, iamSecretKey);
+                _s3Client ??= new AmazonS3Client(_credentials, bucketRegion);
 
                 //check for lock file for preventing multiple uploads
                 lockFilePresent = await Exists($"{tempS3Directory}/{fidelity}-{version}.lock", $"cycligent-downloads");
@@ -210,7 +211,7 @@ namespace S3_Uploader.Editor
                         return;
                 }
 
-                await Invalidate(credentials);
+                await Invalidate(_credentials);
             }
             catch (AmazonS3Exception e)
             {
@@ -253,8 +254,6 @@ namespace S3_Uploader.Editor
                 if (ex.StatusCode != System.Net.HttpStatusCode.NotFound) throw;
                 Debug.Log($"Not found: '{fileKey}' in '{bucket}'");
                 return false;
-
-                //status wasn't not found, so throw the exception
             }
         }
 
@@ -284,6 +283,7 @@ namespace S3_Uploader.Editor
             //create client lock
             var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
             await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
+            await Invalidate(_credentials);
             //copy files from temp-directory to correct directory
             await CopyTempFiles(uploadPath);
             //delete client lock
@@ -324,6 +324,7 @@ namespace S3_Uploader.Editor
             //create client lock
             var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
             await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
+            await Invalidate(_credentials);
             //copy temp directory to main directory
             await CopyTempFiles(uploadPath);
             //delete client lock
