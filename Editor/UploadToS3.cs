@@ -280,10 +280,12 @@ namespace S3_Uploader.Editor
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
+            //Invalidation takes 60-300 seconds. Copying the files takes max 6 minutes if copying EVERY map file
+            //and the copying finishes before the invalidation of the lock file making it basically pointless
             //create client lock
-            var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
-            await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
-            await Invalidate(_credentials);
+            //var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
+            //await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
+            //await Invalidate(_credentials, $"/cycligent-downloads/{destination}/client-{fidelity}-{version}.lock");
             //copy files from temp-directory to correct directory
             await CopyTempFiles(uploadPath);
             //delete client lock
@@ -321,10 +323,12 @@ namespace S3_Uploader.Editor
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
+            //Invalidation takes 60-300 seconds. Copying the files takes max 6 minutes if copying EVERY map file
+            //and the copying finishes before the invalidation of the lock file making it basically pointless
             //create client lock
-            var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
-            await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
-            await Invalidate(_credentials);
+            //var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
+            //await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
+            //await Invalidate(_credentials, $"/cycligent-downloads/{destination}/client-{fidelity}-{version}.lock");
             //copy temp directory to main directory
             await CopyTempFiles(uploadPath);
             //delete client lock
@@ -570,12 +574,12 @@ namespace S3_Uploader.Editor
         }
 
 
-        private async Task Invalidate(AWSCredentials credentials)
+        private async Task Invalidate(AWSCredentials credentials, string key = "/*")
         {
             var cloudFront = new AmazonCloudFrontClient(credentials, bucketRegion);
             var invalidator = new CloudFrontInvalidator(cloudFront);
-            Debug.Log("Invalidation Started");
-            invalidator.InvalidateObject();
+            Debug.Log($"Invalidation Started for {key}");
+            invalidator.InvalidateObject(key);
             await invalidator.SendInvalidation();
             Debug.Log("Invalidation Sent");
         }

@@ -4,6 +4,9 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2021-11-17
+- added ability to invalidate single objects instead of whole distribution (note this seems to take the same time as doing the whole distribution)
+- removed client-lock and invalidation. invalidation takes longer than the copy
 
 ## [1.2.3] - 2021-11-17
 - added invalidating after creating lock file

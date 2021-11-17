@@ -9,7 +9,7 @@ namespace S3_Uploader.Editor
 {
     public interface IInvalidator
     {
-        void InvalidateObject();
+        void InvalidateObject(string key = "/*");
     }
 
     public class CloudFrontInvalidator : IInvalidator
@@ -25,14 +25,13 @@ namespace S3_Uploader.Editor
             this.cloudFrontClient = cloudFrontClient;
         }
 
-        public void InvalidateObject()
+        public void InvalidateObject(string key = "/*")
         {
             const string distId = "E10549IFLFSF3U";
 
             if (string.IsNullOrWhiteSpace(distId))
                 return;
-
-            const string preparedKey = "/*";
+            
             lock (pendingRequestLockTarget)
             {
                 if (pendingRequest == null)
@@ -46,14 +45,14 @@ namespace S3_Uploader.Editor
                             Paths = new Paths
                             {
                                 Quantity = 1,
-                                Items = new List<string> {preparedKey}
+                                Items = new List<string> {key}
                             }
                         }
                     };
                 }
                 else
                 {
-                    pendingRequest.InvalidationBatch.Paths.Items.Add(preparedKey);
+                    pendingRequest.InvalidationBatch.Paths.Items.Add(key);
                 }
             }
         }
