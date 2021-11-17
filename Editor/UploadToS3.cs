@@ -289,7 +289,7 @@ namespace S3_Uploader.Editor
             //copy files from temp-directory to correct directory
             await CopyTempFiles(uploadPath);
             //delete client lock
-            await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
+            //await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
             //delete temp-directory on s3
             if (autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
@@ -332,7 +332,7 @@ namespace S3_Uploader.Editor
             //copy temp directory to main directory
             await CopyTempFiles(uploadPath);
             //delete client lock
-            await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
+            //await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
             //delete files in s3 main directory that are not in your local folder
             await DeleteOldFiles(s3Files, localFiles);
             //delete files from temp-directory
