@@ -186,7 +186,7 @@ namespace S3_Uploader.Editor
 
                 //create lock file for preventing multiple uploads
                 var file = CreateLockFile($"{fidelity}-{version}.lock", localFilePath);
-                await UploadFile($"cycligent-downloads/{tempS3Directory}", file);
+                await UploadFile($"cycligent-downloads/{tempS3Directory}", file, null, false);
 
                 if (backup)
                 {
@@ -449,7 +449,7 @@ namespace S3_Uploader.Editor
         }
 
 
-        private async Task UploadFile(string uploadPath, FileInfo file, TransferUtility transferUtility = null)
+        private async Task UploadFile(string uploadPath, FileInfo file, TransferUtility transferUtility = null, bool updateProgressWindow = true)
         {
             transferUtility ??= new TransferUtility(_s3Client);
             var directoryName = file.DirectoryName ?? "";
@@ -465,12 +465,12 @@ namespace S3_Uploader.Editor
                 StorageClass = S3StorageClass.Standard,
                 CannedACL = S3CannedACL.PublicRead,
             };
-            if (progressWindow)
+            if (updateProgressWindow && progressWindow)
                 progressWindow.UpdateStatus(file.Name, Status.Uploading);
             transferUtilityRequest.UploadProgressEvent += UploadProgress;
             await transferUtility.UploadAsync(transferUtilityRequest);
             transferUtilityRequest.UploadProgressEvent -= UploadProgress;
-            if (progressWindow)
+            if (updateProgressWindow && progressWindow)
                 progressWindow.UpdateStatus(file.Name, Status.Uploaded);
             Debug.Log($"Upload completed for {file.Name}! Full Name: '{file.FullName}'");
         }
@@ -479,7 +479,7 @@ namespace S3_Uploader.Editor
         private void UploadProgress(object sender, UploadProgressArgs e)
         {
             var key = e.FilePath.Split('\\').Last();
-            Debug.Log($"Uploading: {key} {e.PercentDone}. transferred: {e.TransferredBytes}/{e.TotalBytes}");
+           // Debug.Log($"Uploading: {key} {e.PercentDone}. transferred: {e.TransferredBytes}/{e.TotalBytes}");
             if (progressWindow)
                 progressWindow.UpdateProgress(key, e.PercentDone / 100f, e.TransferredBytes);
         }
