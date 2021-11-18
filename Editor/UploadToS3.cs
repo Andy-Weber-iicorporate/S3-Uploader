@@ -280,16 +280,13 @@ namespace S3_Uploader.Editor
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
-            //Invalidation takes 60-300 seconds. Copying the files takes max 6 minutes if copying EVERY map file
-            //and the copying finishes before the invalidation of the lock file making it basically pointless
             //create client lock
-            //var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
-            //await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
-            //await Invalidate(_credentials, $"/cycligent-downloads/{destination}/client-{fidelity}-{version}.lock");
+            var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
+            await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
             //copy files from temp-directory to correct directory
             await CopyTempFiles(uploadPath);
             //delete client lock
-            //await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
+            await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
             //delete temp-directory on s3
             if (autoDeleteTemp)
                 await DeleteAllObjectsIn(uploadPath);
@@ -323,16 +320,12 @@ namespace S3_Uploader.Editor
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
             await UploadFiles(filesToUpload, uploadPath);
-            //Invalidation takes 60-300 seconds. Copying the files takes max 6 minutes if copying EVERY map file
-            //and the copying finishes before the invalidation of the lock file making it basically pointless
-            //create client lock
-            //var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
-            //await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
-            //await Invalidate(_credentials, $"/cycligent-downloads/{destination}/client-{fidelity}-{version}.lock");
+            var lockFile = CreateLockFile($"client-{fidelity}-{version}.lock", localFilePath);
+            await UploadFile($"cycligent-downloads/{destination}", lockFile, null, false);
             //copy temp directory to main directory
             await CopyTempFiles(uploadPath);
             //delete client lock
-            //await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
+            await DeleteFile($"{destination}/client-{fidelity}-{version}.lock");
             //delete files in s3 main directory that are not in your local folder
             await DeleteOldFiles(s3Files, localFiles);
             //delete files from temp-directory
