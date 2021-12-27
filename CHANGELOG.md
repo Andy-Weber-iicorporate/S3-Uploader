@@ -4,8 +4,12 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.4.3] - 2021-12-27
+- iterated version in package.json to 1.4.3
+- iterated to wrong version in previous push
+
 ## [1.4.2] - 2021-12-27
--iterated version in package.json to 1.4.2
+- iterated version in package.json to 1.4.2
 
 ## [1.4.1] - 2021-12-27
 - removed check for "no files to upload". Previously if the only files found to upload were the catalogs it would not upload because no assets changed, but its possible a key in the catalog can checnage without assets changing so this check was removed.
