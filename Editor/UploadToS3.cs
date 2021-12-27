@@ -271,11 +271,11 @@ namespace S3_Uploader.Editor
 
             //Get files to upload to s3 (content files + files not found on s3)
             var filesToUpload = GetFilesToUpload(localFiles, s3Files);
-            if (filesToUpload.Count <= 2)
+            /*if (filesToUpload.Count <= 2)
             {
                 Debug.Log("No files to upload!");
                 return false;
-            }
+            }*/
 
             progressWindow = ProgressDisplay.ShowWindow(filesToUpload);
             //upload new files to temp-directory
@@ -307,11 +307,11 @@ namespace S3_Uploader.Editor
 
             //Get files to upload to s3 (content files + files not found on s3)
             var filesToUpload = GetFilesToUpload(localFiles, s3Files);
-            if (filesToUpload.Count <= 2)
+            /*if (filesToUpload.Count <= 2)
             {
                 Debug.Log("No files to upload!");
                 return false;
-            }
+            }*/
 
             //create required file
             var file = CreateRequiredFile(localFilePath);
