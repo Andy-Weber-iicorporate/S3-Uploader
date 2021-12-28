@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.5.0] - 2021-12-27
+- changed log-file name to upload-log
+- added an upload-log-previous
+- added uploading of upload-log and upload-log-previous to S3
+- adjusted window width to show whole word after progress bar
+- color coated the status of the upload
+
 ## [1.4.4] - 2021-12-27
 - added log file creation during upload process
 

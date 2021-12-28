@@ -140,12 +140,34 @@ namespace S3_Uploader.Editor
                 }
 
                 GUILayout.BeginHorizontal();
-                Rect rect2 = GUILayoutUtility.GetRect(position.width - 60, 18, GUIStyle.none);
-                Rect rect3 = GUILayoutUtility.GetRect(60, 18, GUIStyle.none);
+                Rect rect2 = GUILayoutUtility.GetRect(position.width - 70, 18, GUIStyle.none);
+                Rect rect3 = GUILayoutUtility.GetRect(70, 18, GUIStyle.none);
                 GUILayout.EndHorizontal();
                 EditorGUI.ProgressBar(rect2, content.Value.Progress,
                     $"{content.Value.Progress * 100f}%... ({content.Value.Transferred:N1}/{content.Value.Size:N1} bytes)");
+
+                var contentColor = GUI.contentColor;
+                switch (content.Value.Status)
+                {
+                    case Status.Idle:
+                        GUI.contentColor = Color.black;
+                        break;
+                    case Status.Uploading:
+                    case Status.Uploaded:
+                    case Status.Copying:
+                        GUI.contentColor = Color.yellow;
+                        break;
+                    case Status.Completed:
+                        GUI.contentColor = Color.green;
+                        break;
+                    case Status.Failed:
+                        GUI.contentColor = Color.red;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
                 EditorGUI.LabelField(rect3, content.Value.Status.ToString());
+                GUI.contentColor = contentColor;
             }
 
             if (complete)

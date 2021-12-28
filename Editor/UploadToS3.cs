@@ -16,13 +16,13 @@ using UnityEngine;
 
 namespace S3_Uploader.Editor
 {
-    enum Version
+    public enum Version
     {
         Production,
         Dev
     }
 
-    enum Fidelity
+    public enum Fidelity
     {
         Low,
         Medium,
@@ -165,7 +165,10 @@ namespace S3_Uploader.Editor
         private async Task InitiateTask(string localFilePath)
         {
             _running = true;
-            _logger = new Logger();
+            _logger = new Logger(fidelity, version);
+            if(progressWindow != null)
+                progressWindow.Close();
+            Debug.Log("Binding logger to unity logging");
             Application.logMessageReceived += _logger.Log;
             var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
             var s3Directory = $"CADEsportCDN/assets/Addressables/{bucketName}/{fidelity}/{version}/{buildTarget}";
@@ -185,6 +188,7 @@ namespace S3_Uploader.Editor
                 if (lockFilePresent)
                 {
                     Debug.Log("An upload is already in progress. Please try again later.");
+                    Debug.LogWarning("Upload Ended early. ----Did not Complete----");
                     return;
                 }
 
@@ -349,7 +353,7 @@ namespace S3_Uploader.Editor
                 if (localFile.Name.Contains("required.txt"))
                     continue;
 
-                if (localFile.Name.Contains("catalog_"))
+                if (localFile.Name.Contains("catalog_") || localFile.Name.Contains("upload-log"))
                 {
                     Debug.Log($"Adding {localFile.Name} to files to upload");
                     filesToUpload.Add(localFile);
