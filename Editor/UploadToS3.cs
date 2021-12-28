@@ -54,6 +54,7 @@ namespace S3_Uploader.Editor
 
         private bool _uploading;
         ProgressDisplay progressWindow;
+        private Logger _logger;
 
         private AmazonS3Client _s3Client;
         private bool _running;
@@ -134,8 +135,7 @@ namespace S3_Uploader.Editor
                 {
                     bucketRegion = RegionEndpoint.GetBySystemName(region);
                     var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
-                    var localFilePath =
-                        Path.Combine("ServerData", fidelity.ToString(), version.ToString(), buildTarget);
+                    var localFilePath = Path.Combine("ServerData", fidelity.ToString(), version.ToString(), buildTarget);
                     InitiateTask(localFilePath);
                 }
             }
@@ -165,10 +165,13 @@ namespace S3_Uploader.Editor
         private async Task InitiateTask(string localFilePath)
         {
             _running = true;
+            _logger = new Logger();
+            Application.logMessageReceived += _logger.Log;
             var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
             var s3Directory = $"CADEsportCDN/assets/Addressables/{bucketName}/{fidelity}/{version}/{buildTarget}";
             var tempS3Directory = $"{s3Directory}-temp";
             var lockFilePresent = false;
+            string exception = "";
             Debug.Log($"Starting a content upload from {localFilePath} to {s3Directory}");
 
             try
@@ -199,16 +202,12 @@ namespace S3_Uploader.Editor
                 if (required)
                 {
                     // -- required upload
-                    var completed = await RequiredUpload(tempS3Directory, localFilePath);
-                    if (completed == false)
-                        return;
+                    await RequiredUpload(tempS3Directory, localFilePath);
                 }
                 else
                 {
                     // -- not required upload
-                    var completed = await NonRequiredUpload(tempS3Directory, localFilePath);
-                    if (completed == false)
-                        return;
+                    await NonRequiredUpload(tempS3Directory, localFilePath);
                 }
 
                 await Invalidate(_credentials);
@@ -216,10 +215,12 @@ namespace S3_Uploader.Editor
             catch (AmazonS3Exception e)
             {
                 Debug.LogError($"Error encountered on server. Message:'{e.Message}' when writing an object");
+                exception = e.Message;
             }
             catch (Exception e)
             {
-                Debug.LogError($"Unknown encountered on server. Message:'{e.Message}' when writing an object");
+                Debug.LogError($"Unknown error encountered. Message:'{e.Message}' when writing an object");
+                exception = e.Message;
             }
             finally
             {
@@ -228,8 +229,9 @@ namespace S3_Uploader.Editor
                     await DeleteFile($"{tempS3Directory}/{fidelity}-{version}.lock");
 
                 _running = false;
-                Debug.Log("Uploading complete!");
+                Debug.Log(string.IsNullOrEmpty(exception) ? "Uploading Finished!" : $"Uploading Finished with exception: {exception}");
                 progressWindow.Complete();
+                Application.logMessageReceived -= _logger.Log;
             }
         }
 
