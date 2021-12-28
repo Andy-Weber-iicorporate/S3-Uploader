@@ -233,12 +233,13 @@ namespace S3_Uploader.Editor
                     await DeleteFile($"{tempS3Directory}/{fidelity}-{version}.lock");
 
                 _running = false;
-                Debug.Log(string.IsNullOrEmpty(exception) ? "Uploading Finished!" : $"Uploading Finished with exception: {exception}");
-                await UploadFile($"cycligent-downloads/{s3Directory}", new FileInfo(_logger.FilePathPrevious), null, false);
-                await UploadFile($"cycligent-downloads/{s3Directory}", new FileInfo(_logger.FilePath), null, false);
-                Application.logMessageReceived -= _logger.Log;
-                _logger = null;
                 progressWindow.Complete();
+                Debug.Log(string.IsNullOrEmpty(exception) ? "Uploading Finished!" : $"Uploading Finished with exception: {exception}");
+                Application.logMessageReceived -= _logger.Log;
+                if(File.Exists(_logger.FilePathPrevious))
+                    await UploadFile($"cycligent-downloads/{s3Directory}", new FileInfo(_logger.FilePathPrevious), null, false);
+                await UploadFile($"cycligent-downloads/{s3Directory}", new FileInfo(_logger.FilePath), null, false);
+                _logger = null;
             }
         }
 
@@ -587,7 +588,7 @@ namespace S3_Uploader.Editor
         {
             var cloudFront = new AmazonCloudFrontClient(credentials, bucketRegion);
             var invalidator = new CloudFrontInvalidator(cloudFront);
-            Debug.Log($"Invalidation Started for {key}");
+            Debug.Log($"Invalidation Started for {key}, awaiting the send to return a completed send...");
             invalidator.InvalidateObject(key);
             await invalidator.SendInvalidation();
             Debug.Log("Invalidation Sent");

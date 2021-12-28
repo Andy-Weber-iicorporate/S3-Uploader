@@ -149,7 +149,7 @@ namespace S3_Uploader.Editor
                 switch (content.Value.Status)
                 {
                     case Status.Idle:
-                        GUI.contentColor = Color.black;
+                        GUI.contentColor = contentColor;
                         break;
                     case Status.Uploading:
                     case Status.Uploaded:
