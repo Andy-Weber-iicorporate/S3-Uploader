@@ -234,8 +234,11 @@ namespace S3_Uploader.Editor
 
                 _running = false;
                 Debug.Log(string.IsNullOrEmpty(exception) ? "Uploading Finished!" : $"Uploading Finished with exception: {exception}");
-                progressWindow.Complete();
+                await UploadFile($"cycligent-downloads/{s3Directory}", new FileInfo(_logger.FilePathPrevious), null, false);
+                await UploadFile($"cycligent-downloads/{s3Directory}", new FileInfo(_logger.FilePath), null, false);
                 Application.logMessageReceived -= _logger.Log;
+                _logger = null;
+                progressWindow.Complete();
             }
         }
 
@@ -352,8 +355,11 @@ namespace S3_Uploader.Editor
 
                 if (localFile.Name.Contains("required.txt"))
                     continue;
+                
+                if(localFile.Name.Contains("upload-log"))
+                    continue;
 
-                if (localFile.Name.Contains("catalog_") || localFile.Name.Contains("upload-log"))
+                if (localFile.Name.Contains("catalog_"))
                 {
                     Debug.Log($"Adding {localFile.Name} to files to upload");
                     filesToUpload.Add(localFile);
@@ -468,12 +474,16 @@ namespace S3_Uploader.Editor
                 CannedACL = S3CannedACL.PublicRead,
             };
             if (updateProgressWindow && progressWindow)
+            {
                 progressWindow.UpdateStatus(file.Name, Status.Uploading);
-            transferUtilityRequest.UploadProgressEvent += UploadProgress;
+                transferUtilityRequest.UploadProgressEvent += UploadProgress;
+            }
             await transferUtility.UploadAsync(transferUtilityRequest);
-            transferUtilityRequest.UploadProgressEvent -= UploadProgress;
             if (updateProgressWindow && progressWindow)
+            {
                 progressWindow.UpdateStatus(file.Name, Status.Uploaded);
+                transferUtilityRequest.UploadProgressEvent -= UploadProgress;
+            }
             Debug.Log($"Upload completed for {file.Name}! Full Name: '{file.FullName}'");
         }
 

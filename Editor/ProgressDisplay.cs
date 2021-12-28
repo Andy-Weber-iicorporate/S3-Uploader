@@ -73,9 +73,8 @@ namespace S3_Uploader.Editor
 
         public void UpdateProgress(string content, float progress, float transferred)
         {
-            if (_contentUploading.ContainsKey(content))
+            if (_contentUploading.TryGetValue(content, out var updatedContent))
             {
-                var updatedContent = _contentUploading[content];
                 if (updatedContent.Status == Status.Failed)
                     return;
 

@@ -7,9 +7,10 @@ namespace S3_Uploader.Editor
 {
     public class Logger
     {
-        private readonly string _path;
-        
-        
+        public string FilePath { get; }
+        public string FilePathPrevious { get; }
+
+
         public Logger(Fidelity fidelity, Version version)
         {
             try
@@ -17,16 +18,16 @@ namespace S3_Uploader.Editor
                 var name = "upload-log.txt";
                 var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
                 var localFilePath = Path.Combine("ServerData", fidelity.ToString(), version.ToString(), buildTarget);
-                var filePrevious = Path.Combine(localFilePath, "upload-log-previous.txt");
-                _path = Path.Combine(localFilePath, name);
+                FilePathPrevious = Path.Combine(localFilePath, "upload-log-previous.txt");
+                FilePath = Path.Combine(localFilePath, name);
                 if (Directory.Exists(localFilePath) == false)
                     Directory.CreateDirectory(localFilePath);
-                if(File.Exists(filePrevious))
-                    File.Delete(filePrevious);
-                if (File.Exists(_path))
-                    File.Move(_path, filePrevious);
+                if(File.Exists(FilePathPrevious))
+                    File.Delete(FilePathPrevious);
+                if (File.Exists(FilePath))
+                    File.Move(FilePath, FilePathPrevious);
 
-                using var sw = new StreamWriter(_path);
+                using var sw = new StreamWriter(FilePath);
                 sw.WriteLine($"Content upload started at: '{DateTime.UtcNow}', By: '{Environment.UserName}'");
             }
             catch (Exception e)
@@ -39,7 +40,7 @@ namespace S3_Uploader.Editor
 
         public void Log(string condition, string stackTrace, LogType type)
         {
-            using var file = new StreamWriter(_path, true);
+            using var file = new StreamWriter(FilePath, true);
             file.WriteLine($"Log type: {type}");
             file.WriteLine(condition);
             file.WriteLine(stackTrace);
