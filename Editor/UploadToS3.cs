@@ -390,16 +390,34 @@ namespace S3_Uploader.Editor
             foreach (var s3Object in s3Files)
             {
                 var s3FileName = s3Object.Key.Split('/').Last();
-                var delete = true;
-                foreach (var _ in localFiles.Where(localFile => s3FileName == localFile.Name))
+                if (s3FileName == "required.txt")
                 {
+                    Debug.Log($"Trying to delete 'required.txt' but this file should never be deleted.");
+                    continue;
+                }
+                Debug.Log($"Checking if '{s3FileName}' needs deleting. Original Name: {s3Object.Key}");
+                var delete = true;
+                foreach (var local in localFiles)
+                {
+                    Debug.Log($"Checking if '{local.Name}' is the same as '{s3FileName}'");
+                    if (s3FileName == "required.txt")
+                    {
+                        Debug.Log("Attempting to delete 'required.txt', not sure why. Ignoring.");
+                        delete = false;
+                        continue;
+                    }
+
+                    if (s3FileName != local.Name) 
+                        continue;
+                    
                     delete = false;
                     break;
                 }
-
+                
                 if (delete == false)
                     continue;
-
+                
+                Debug.Log($"{s3FileName} not found in localFiles.");
                 await DeleteObject(s3Object);
             }
         }
