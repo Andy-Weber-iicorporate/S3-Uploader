@@ -41,6 +41,7 @@ namespace S3_Uploader.Editor
         private string region;
         private string bucketName;
         private Fidelity fidelity;
+        private int hoursToCheck = 1;
         private string iamAccessKeyId;
         private string iamSecretKey;
         private bool required;
@@ -106,6 +107,10 @@ namespace S3_Uploader.Editor
                 iamSecretKey = EditorGUILayout.TextField("IAM Secret Key", iamSecretKey);
                 autoDeleteTemp = EditorGUILayout.Toggle("Delete Temp Folder", autoDeleteTemp);
                 backup = EditorGUILayout.Toggle("Backup before updating", backup);
+                if (_running == false && GUILayout.Button("Delete User Cache"))
+                {
+                    DeleteUserCacheCheck();
+                }
             }
 
             GUILayout.Label("Basic Settings", EditorStyles.boldLabel);
@@ -139,6 +144,19 @@ namespace S3_Uploader.Editor
                     InitiateTask(localFilePath);
                 }
             }
+            
+            hoursToCheck = EditorGUILayout.IntField("Hours To Check", hoursToCheck);
+            if (_running == false && GUILayout.Button("Check for changed files"))
+            {
+                var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
+                var localFilePath = Path.Combine("ServerData", fidelity.ToString(), version.ToString(), buildTarget);
+                //get files edited within last hour
+                var infoFiles = GetNewFiles(localFilePath);
+                foreach (var file in infoFiles)
+                {
+                    Debug.Log($"File '{file.Name}' has been changed");
+                }
+            }
 
             if (backupProgress.Running)
             {
@@ -159,6 +177,20 @@ namespace S3_Uploader.Editor
             //     var window = ProgressDisplay.ShowWindow(list);
             //     window.UpdateProgress("test 12", 0.5f, 0);
             // }
+        }
+
+        private async void DeleteUserCacheCheck()
+        {
+            var message = $"Are you sure want to force user to re-download everything? Seems stupid, are you really sure?";
+            var proceed = EditorUtility.DisplayDialog($"Clear UnityAsset Cache?", message, "Yes", "No");
+            if (proceed == false) return;
+            var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
+            var localFilePath = Path.Combine("ServerData", fidelity.ToString(), version.ToString(), buildTarget);
+            var file = CreateCacheDeleteFile(localFilePath);
+            bucketRegion = RegionEndpoint.GetBySystemName(region);
+            _credentials ??= new BasicAWSCredentials(iamAccessKeyId, iamSecretKey);
+            _s3Client ??= new AmazonS3Client(_credentials, bucketRegion);
+            await UploadFile($"cycligent-downloads/CADEsportCDN/assets/Addressables", file, null, false);
         }
 
 
@@ -635,49 +667,53 @@ namespace S3_Uploader.Editor
             return new FileInfo(fileName);
         }
 
+        
+        private static FileInfo CreateCacheDeleteFile(string localFilePath)
+        {
+            Debug.Log("Creating delete cache file");
+            var fileName = Path.Combine(localFilePath, "DeleteCache.dat");
+            var time = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            File.WriteAllText(fileName, time.ToString());
+            return new FileInfo(fileName);
+        }
+
 
         private void OnInspectorUpdate()
         {
             Repaint();
+        }
+
+        
+        private List<FileInfo> GetNewFiles(string path)
+        {
+            var today = DateTime.Now;
+            var start = today.AddHours(-hoursToCheck);
+            var end = today;
+            var files = GetFilesBetween(path, start, end);
+            Debug.Log($"Getting files modified between times '{start}' and '{end}' from path: '{path}'!");
+            var fileList = files as List<FileInfo> ?? files.ToList();
+            var fileNames = new List<string>(fileList.Count);
+            fileNames.AddRange(fileList.Select(file => file.Name));
+            Debug.Log($"These files were modified within the last {(end - start).TotalHours} hours: '{string.Join(", ", fileNames)}'");
+            return fileList;
+        }
+
+
+        private IEnumerable<FileInfo> GetFilesBetween(string path, DateTime start, DateTime end)
+        {
+            var files = GetFiles(path);
+            return files.Where(f => f.LastWriteTime.Between(start, end));
         }
     }
 }
 #pragma warning restore 4014
 
 
-//get files edited within last hour
-//var infoFiles = GetNewFiles(_path);
 
-//var s3Objs = await GetObjectsInBucket("cycligent-downloads", $"{s3Directory}-test");
-//foreach (var obj in s3Objs)
-//{
-//    var s3NamesSplit = obj.Key.Split('/');
-//    var s3FileName = s3NamesSplit.Last();
-//    if (s3FileName != $"{quality}-{_profile}.lock")
-//        continue;
-//    
-//    Debug.Log("An upload is already in progress. Please try again later.");
-//    return;
-//}
 
-// private List<FileInfo> GetNewFiles(string path)
-// {
-//     var today = DateTime.Now;
-//     var start = today.AddHours(-1);
-//     var end = today;
-//     var files = GetFilesBetween(path, start, end);
-//     Debug.Log($"Getting files modified between times '{start}' and '{end}' from path: '{path}'!");
-//     var fileList = files as List<FileInfo> ?? files.ToList();
-//     var fileNames = new List<string>(fileList.Count);
-//     fileNames.AddRange(fileList.Select(file => file.Name));
-//     Debug.Log(
-//         $"These files were modified within the last {(end - start).TotalHours} hours: '{string.Join(", ", fileNames)}'");
-//     return fileList;
-// }
-//
-//
-// private IEnumerable<FileInfo> GetFilesBetween(string path, DateTime start, DateTime end)
-// {
-//     var files = GetFiles(path);
-//     return files.Where(f => f.LastWriteTime.Between(start, end));
-// }
+
+
+
+
+
+
