@@ -181,7 +181,7 @@ namespace S3_Uploader.Editor
 
         private async void DeleteUserCacheCheck()
         {
-            var message = $"Are you sure want to force user to re-download everything? Seems stupid, are you really sure?";
+            var message = $"Are you sure want to force every user to re-download everything? Seems stupid, are you really sure?";
             var proceed = EditorUtility.DisplayDialog($"Clear UnityAsset Cache?", message, "Yes", "No");
             if (proceed == false) return;
             var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
