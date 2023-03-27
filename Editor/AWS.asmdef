@@ -1,8 +1,11 @@
 {
     "name": "AWS",
+    "rootNamespace": "",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [
+        "Android",
+        "Editor",
         "macOSStandalone",
         "WindowsStandalone32",
         "WindowsStandalone64"
