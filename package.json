@@ -1,6 +1,6 @@
 {
   "name": "com.andy.s3-uploader",
-  "version": "1.8.0",
+  "version": "1.8.1",
   "displayName": "S3 Uploader",
   "description": "This package is for uploading content to s3",
   "unity": "2020.3",

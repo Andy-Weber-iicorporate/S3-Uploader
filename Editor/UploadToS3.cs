@@ -190,7 +190,7 @@ namespace S3_Uploader.Editor
             bucketRegion = RegionEndpoint.GetBySystemName(region);
             _credentials ??= new BasicAWSCredentials(iamAccessKeyId, iamSecretKey);
             _s3Client ??= new AmazonS3Client(_credentials, bucketRegion);
-            await UploadFile($"cycligent-downloads/CADEsportCDN/assets/Addressables", file, null, false);
+            await UploadFile($"cycligent-downloads/smash-cdn/assets/Addressables", file, null, false);
         }
 
 
@@ -203,7 +203,7 @@ namespace S3_Uploader.Editor
             Debug.Log("Binding logger to unity logging");
             Application.logMessageReceived += _logger.Log;
             var buildTarget = EditorUserBuildSettings.activeBuildTarget.ToString();
-            var s3Directory = $"CADEsportCDN/assets/Addressables/{bucketName}/{fidelity}/{version}/{buildTarget}";
+            var s3Directory = $"smash-cdn/assets/Addressables/{bucketName}/{fidelity}/{version}/{buildTarget}";
             var tempS3Directory = $"{s3Directory}-temp";
             var lockFilePresent = false;
             string exception = "";
