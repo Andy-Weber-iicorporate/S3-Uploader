@@ -4,7 +4,7 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [1.8.1] - 2023-3-27
+## [1.8.1] - 2023-10-20
 - changed upload urls to point to smash cycling
 -
 ## [1.7.1] - 2023-3-27
