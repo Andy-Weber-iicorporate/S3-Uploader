@@ -27,7 +27,7 @@ namespace S3_Uploader.Editor
 
         public void InvalidateObject(string key = "/*")
         {
-            const string distId = "E10549IFLFSF3U";
+            const string distId = "E2ZNBZTLCDIGXB";
 
             if (string.IsNullOrWhiteSpace(distId))
                 return;
